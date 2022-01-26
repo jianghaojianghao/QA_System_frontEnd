@@ -7,7 +7,7 @@
         placeholder="Please input the question"
         v-model="textarea"
         resize="none"
-        @keyup.enter.native="sendMessage"
+        @keydown.enter.native="sendMessage($event)"
       >
       </el-input>
     </div>
@@ -51,8 +51,8 @@ export default {
       rootId: "空节点",
       nodes: [
         {
-          id: '空节点',
-          text: '空节点',
+          id: "空节点",
+          text: "空节点",
           color: "#1167be",
           borderColor: "#1167be",
           width: "80",
@@ -79,7 +79,10 @@ export default {
     onLineClick(lineObject, $event) {
       console.log("onLineClick:", lineObject);
     },
-    sendMessage() {
+    sendMessage(event) {
+      // 阻止默认事件
+      event.preventDefault();
+
       let that = this;
 
       let question = this.textarea;
@@ -92,82 +95,91 @@ export default {
         })
         .then((res) => {
           let answer = res.data;
-
-          let __graph_json_data = {
-            rootId: "",
-            nodes: [],
-            links: [],
-            layouts: { layoutName: "force" },
-          };
-
-          answer.forEach((elem) => {
-            let node = {
-              id: elem.entity,
-              text: elem.entity,
-              color: "#1167be",
-              borderColor: "#1167be",
-              width: "50",
-              height: "50",
-              innerHTML:
-                '<div style="overflow: hidden;white-space: nowrap;text-overflow: ellipsis;line-height:50px;font-size:12px;border-radius:50%">' +
-                elem.entity +
-                "</div>",
+          if (answer == "NotFound") {
+            that.$message({
+              showClose: true,
+              message: "Answer Not Found!",
+              type: "warning",
+              duration:1000,
+            });
+            console.log(answer);
+          } else {
+            let __graph_json_data = {
+              rootId: "",
+              nodes: [],
+              links: [],
+              layouts: { layoutName: "force" },
             };
-            __graph_json_data.rootId = elem.entity;
-            __graph_json_data.nodes.push(node);
 
-            elem.object.forEach((oElem) => {
-              if (oElem instanceof Array) {
-                oElem.forEach((objElem) => {
+            answer.forEach((elem) => {
+              let node = {
+                id: elem.entity,
+                text: elem.entity,
+                color: "#1167be",
+                borderColor: "#1167be",
+                width: "50",
+                height: "50",
+                innerHTML:
+                  '<div style="overflow: hidden;white-space: nowrap;text-overflow: ellipsis;line-height:50px;font-size:12px;border-radius:50%">' +
+                  elem.entity +
+                  "</div>",
+              };
+              __graph_json_data.rootId = elem.entity;
+              __graph_json_data.nodes.push(node);
+
+              elem.object.forEach((oElem) => {
+                if (oElem instanceof Array) {
+                  oElem.forEach((objElem) => {
+                    let obNode = {
+                      id: objElem,
+                      color: "#1167be",
+                      borderColor: "#1167be",
+                      width: "50",
+                      height: "50",
+                      innerHTML:
+                        '<div style="overflow: hidden;white-space: nowrap;text-overflow: ellipsis;line-height:50px;font-size:12px;border-radius:50%">' +
+                        objElem +
+                        "</div>",
+                    };
+
+                    let link = {
+                      from: elem.entity,
+                      to: objElem,
+                      text: elem.relation,
+                      color: "#43a2f1",
+                    };
+
+                    __graph_json_data.nodes.push(obNode);
+                    __graph_json_data.links.push(link);
+                  });
+                } else {
                   let obNode = {
-                    id: objElem,
-                    color: "#1167be",
-                    borderColor: "#1167be",
+                    id: oElem,
                     width: "50",
                     height: "50",
+                    color: "#1167be",
+                    borderColor: "#1167be",
                     innerHTML:
                       '<div style="overflow: hidden;white-space: nowrap;text-overflow: ellipsis;line-height:50px;font-size:12px;border-radius:50%">' +
-                      objElem +
+                      oElem +
                       "</div>",
                   };
 
                   let link = {
                     from: elem.entity,
-                    to: objElem,
+                    to: oElem,
                     text: elem.relation,
                     color: "#43a2f1",
                   };
 
                   __graph_json_data.nodes.push(obNode);
                   __graph_json_data.links.push(link);
-                });
-              } else {
-                let obNode = {
-                  id: oElem,
-                  width: "50",
-                  height: "50",
-                  color: "#1167be",
-                  borderColor: "#1167be",
-                  innerHTML:
-                    '<div style="overflow: hidden;white-space: nowrap;text-overflow: ellipsis;line-height:50px;font-size:12px;border-radius:50%">' +
-                    oElem +
-                    "</div>",
-                };
+                }
+              });
 
-                let link = {
-                  from: elem.entity,
-                  to: oElem,
-                  text: elem.relation,
-                  color: "#43a2f1",
-                };
-
-                __graph_json_data.nodes.push(obNode);
-                __graph_json_data.links.push(link);
-              }
+              this.showSeeksGraph(__graph_json_data);
             });
-
-            this.showSeeksGraph(__graph_json_data);
-          });
+          }
         });
     },
   },

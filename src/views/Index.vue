@@ -39,7 +39,7 @@
           placeholder="Please input the question"
           v-model="textarea"
           resize="none"
-          @keyup.enter.native="sendMessage"
+          @keydown.enter.native="sendMessage"
         >
         </el-input>
       </div>
@@ -66,9 +66,10 @@ export default {
     handleSelect(key, keyPath) {
       console.log(key, keyPath);
     },
-    sendMessage() {
+    sendMessage(e) {
       // 将this存储在that，在this.axios会发生this对象指向问题
       let that = this;
+      e.preventDefault();
 
       // 计算当前时间并按格式输出
       this.timeCal();
